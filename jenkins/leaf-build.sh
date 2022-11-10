@@ -19,10 +19,13 @@ export TARGET_RO_FILE_SYSTEM_TYPE="erofs"
 export BOARD_EXT4_SHARE_DUP_BLOCKS=true
 export OVERRIDE_TARGET_FLATTEN_APEX=true
 
+[ "$JENKINS_REPOPICK" ] && TELEGRAM_REPOPICK="Repopick: $JENKINS_REPOPICK"
+
 # Telegram Bot token
 source /var/lib/jenkins/leaf/telegram.sh
 
 TELEGRAM_MESSAGE="Build $BUILD_DISPLAY_NAME: [See progress](${BUILD_URL}console)
+$TELEGRAM_REPOPICK
 Build status:"
 
 function telegram() {
