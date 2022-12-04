@@ -43,7 +43,7 @@ function telegram() {
 function sync() {
 	telegram sendMessage "$TELEGRAM_MESSAGE Syncing"
 	repo init -u https://git.leafos.org/LeafOS-Project/android -b "leaf-$JENKINS_LEAF_VERSION" --depth=1
-	repo forall -c 'git reset --hard; git clean -fdx' >/dev/null
+	repo forall -c 'git reset --hard; git clean -fdx' >/dev/null || true
 	repo sync -j"$(nproc)" --force-sync
 	if [ "$JENKINS_REPOPICK" ] && [ "$JENKINS_RELEASETYPE" != stable ]; then
 		read -a JENKINS_REPOPICK <<<"$JENKINS_REPOPICK"
