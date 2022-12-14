@@ -19,6 +19,9 @@ export TARGET_RO_FILE_SYSTEM_TYPE="erofs"
 export BOARD_EXT4_SHARE_DUP_BLOCKS=true
 export OVERRIDE_TARGET_FLATTEN_APEX=true
 
+export CCACHE_EXEC=$(which ccache)
+[ ! -z "$CCACHE_EXEC" ] && export USE_CCACHE="true"
+
 [ "$JENKINS_REPOPICK" ] && TELEGRAM_REPOPICK="Repopick: $JENKINS_REPOPICK"
 
 # Telegram Bot token
