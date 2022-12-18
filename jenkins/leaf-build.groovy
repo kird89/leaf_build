@@ -10,6 +10,7 @@ pipeline {
         choice(name: 'JENKINS_BUILDTYPE', choices: ['user', 'userdebug', 'eng'], description: '')
         choice(name: 'JENKINS_RELEASETYPE', choices: ['alpha', 'beta', 'stable'], description: '')
         booleanParam(name: 'JENKINS_CLEAN', defaultValue: true, description: '')
+        booleanParam(name: 'JENKINS_REPOSYNC', defaultValue: true, description: '')
         booleanParam(name: 'JENKINS_TELEGRAM', defaultValue: true, description: '')
     }
     environment {
@@ -20,10 +21,20 @@ pipeline {
        disableConcurrentBuilds()
     }
     stages {
-        stage('Sync') {
+        stage('Init') {
             steps {
                 script {
                     currentBuild.displayName = "${currentBuild.displayName} (${params.JENKINS_DEVICE})"
+                }
+                leaf_build("init")
+            }
+        }
+        stage('Sync') {
+            when {
+                environment(name: "JENKINS_REPOSYNC", value: "true")
+            }
+            steps {
+                script {
                     env.STAGE = "sync"
                 }
                 leaf_build("sync")

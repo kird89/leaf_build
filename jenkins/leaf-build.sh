@@ -43,8 +43,12 @@ function telegram() {
 	fi
 }
 
+function init() {
+	telegram sendMessage "$TELEGRAM_MESSAGE"
+}
+
 function sync() {
-	telegram sendMessage "$TELEGRAM_MESSAGE Syncing"
+	telegram editMessageText "$TELEGRAM_MESSAGE Syncing"
 	repo init -u https://git.leafos.org/LeafOS-Project/android -b "leaf-$JENKINS_LEAF_VERSION" --depth=1
 	repo forall -c 'git reset --hard; git clean -fdx' >/dev/null || true
 	repo sync -j"$(nproc)" --force-sync
