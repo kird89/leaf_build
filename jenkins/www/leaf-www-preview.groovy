@@ -1,8 +1,13 @@
 pipeline {
     agent any
+    options {
+        checkoutToSubdirectory('jenkins/build')
+        disableConcurrentBuilds()
+    }
     stages {
         stage('Init'){
             steps {
+                cleanWs()
                 sh '''#!/bin/bash
                        git init
                        git remote add origin ssh://LeafOS-Jenkins@review.leafos.org:29418/LeafOS-Project/leaf_www
