@@ -14,6 +14,7 @@ DL_DIR="/var/www/dl.leafos.org/$RELEASE_DIR$JENKINS_DEVICE/$BUILDDATE"
 KEY_DIR="/var/lib/jenkins/.android-certs"
 AVB_ALGORITHM="SHA256_RSA4096"
 OTATOOLS="out/host/linux-x86/bin"
+[[ "$JENKINS_DEVICE" = *_gsi_* ]] && TARGET_IS_GSI="true"
 export LEAF_BUILDTYPE="OFFICIAL"
 export TARGET_RO_FILE_SYSTEM_TYPE="erofs"
 export BOARD_EXT4_SHARE_DUP_BLOCKS=true
@@ -27,7 +28,7 @@ export CCACHE_EXEC=$(which ccache)
 # Telegram Bot token
 source /var/lib/jenkins/leaf/telegram.sh
 
-TELEGRAM_MESSAGE="Build $BUILD_DISPLAY_NAME: [See progress](${BUILD_URL}console)
+TELEGRAM_MESSAGE="Build "${BUILD_DISPLAY_NAME//_/\\_}": [See progress](${BUILD_URL}console)
 $TELEGRAM_REPOPICK
 Build status:"
 
@@ -90,9 +91,11 @@ function target-files() {
 
 function sign() {
 	telegram editMessageText "$TELEGRAM_MESSAGE Signing build"
+	[ ! -z "$TARGET_IS_GSI" ] && ALLOW_GSI_DEBUG_SEPOLICY="--allow_gsi_debug_sepolicy"
 	mkdir -p "/var/lib/jenkins/leaf/target-files/$RELEASE_DIR$JENKINS_DEVICE"
 	for JENKINS_FLAVOR in "${LEAF_FLAVORS[@]}"; do
 		"$OTATOOLS/sign_target_files_apks" -o -d "$KEY_DIR" \
+			"$ALLOW_GSI_DEBUG_SEPOLICY" \
 			--avb_vbmeta_key "$KEY_DIR/avb.pem" \
 			--avb_vbmeta_algorithm "$AVB_ALGORITHM" \
 			--extra_apks AdServicesApk.apk="$KEY_DIR/releasekey" \
@@ -172,8 +175,8 @@ function sign() {
 }
 
 function ota-package-name() {
-	OLD_BUILD_ID=$(unzip -p "$TARGET_FILES_DIR/$(cat "$TARGET_FILES_DIR/latest_$JENKINS_FLAVOR")" \
-		SYSTEM/build.prop | grep ro.build.version.incr | cut -d'=' -f2)
+	OLD_BUILD_ID=$(unzip -p "$TARGET_FILES_DIR/$(cat "$TARGET_FILES_DIR/latest_$JENKINS_FLAVOR" 2>/dev/null)" \
+		SYSTEM/build.prop 2>/dev/null | grep ro.build.version.incr | cut -d'=' -f2)
 	LEAF_PACKAGE="leaf-$JENKINS_LEAF_VERSION$LEAF_EXTRAVERSION-$BUILD_ID-$JENKINS_FLAVOR-$JENKINS_DEVICE"
 	LEAF_INCR_PACKAGE="leaf-$JENKINS_LEAF_VERSION$LEAF_EXTRAVERSION-$OLD_BUILD_ID-incr-$BUILD_ID-$JENKINS_FLAVOR-$JENKINS_DEVICE"
 }
@@ -182,15 +185,26 @@ function ota-package() {
 	telegram editMessageText "$TELEGRAM_MESSAGE Generating OTA package"
 	for JENKINS_FLAVOR in "${LEAF_FLAVORS[@]}"; do
 		ota-package-name
-		"$OTATOOLS/ota_from_target_files" -k "$KEY_DIR/releasekey" \
-			"$TARGET_FILES_DIR/$JENKINS_DEVICE-target_files-$JENKINS_FLAVOR-$BUILD_ID-signed.zip" \
-			"$LEAF_PACKAGE.zip"
-		# Incremental OTA
-		if [ -f "$TARGET_FILES_DIR/$(cat "$TARGET_FILES_DIR/latest_$JENKINS_FLAVOR" 2>/dev/null)" ]; then
+		if [ -z "$TARGET_IS_GSI" ]; then
 			"$OTATOOLS/ota_from_target_files" -k "$KEY_DIR/releasekey" \
-				-i "$TARGET_FILES_DIR/$(cat "$TARGET_FILES_DIR/latest_$JENKINS_FLAVOR")" \
 				"$TARGET_FILES_DIR/$JENKINS_DEVICE-target_files-$JENKINS_FLAVOR-$BUILD_ID-signed.zip" \
-				"$LEAF_INCR_PACKAGE.zip"
+				"$LEAF_PACKAGE.zip"
+			# Incremental OTA
+			if [ -f "$TARGET_FILES_DIR/$(cat "$TARGET_FILES_DIR/latest_$JENKINS_FLAVOR" 2>/dev/null)" ]; then
+				"$OTATOOLS/ota_from_target_files" -k "$KEY_DIR/releasekey" \
+					-i "$TARGET_FILES_DIR/$(cat "$TARGET_FILES_DIR/latest_$JENKINS_FLAVOR")" \
+					"$TARGET_FILES_DIR/$JENKINS_DEVICE-target_files-$JENKINS_FLAVOR-$BUILD_ID-signed.zip" \
+					"$LEAF_INCR_PACKAGE.zip"
+			fi
+		else
+			# Full image package for GSI
+			"$OTATOOLS/img_from_target_files" \
+				"$TARGET_FILES_DIR/$JENKINS_DEVICE-target_files-$JENKINS_FLAVOR-$BUILD_ID-signed.zip" \
+				"$LEAF_PACKAGE-img.zip"
+
+			# Cleanup since there are no incremental packages for GSI
+			rm "$TARGET_FILES_DIR/$JENKINS_DEVICE-target_files-$JENKINS_FLAVOR-$BUILD_ID-signed.zip"
+			rmdir "$TARGET_FILES_DIR" 2>/dev/null || true
 		fi
 	done
 }
@@ -206,15 +220,20 @@ function upload() {
 	ssh jenkins@$MASTER_IP mkdir -p "$DL_DIR"
 	for JENKINS_FLAVOR in "${LEAF_FLAVORS[@]}"; do
 		ota-package-name
-		retry_uploading "$LEAF_PACKAGE.zip"
-		if [ -f "$LEAF_INCR_PACKAGE.zip" ]; then
-			retry_uploading "$LEAF_INCR_PACKAGE.zip"
-			rm -f "$TARGET_FILES_DIR/$(cat "$TARGET_FILES_DIR/latest_$JENKINS_FLAVOR")"
+		if [ -z "$TARGET_IS_GSI" ]; then
+			retry_uploading "$LEAF_PACKAGE.zip"
+			if [ -f "$LEAF_INCR_PACKAGE.zip" ]; then
+				retry_uploading "$LEAF_INCR_PACKAGE.zip"
+				rm -f "$TARGET_FILES_DIR/$(cat "$TARGET_FILES_DIR/latest_$JENKINS_FLAVOR")"
+			fi
+			unzip -p "$TARGET_FILES_DIR/$JENKINS_DEVICE-target_files-$JENKINS_FLAVOR-$BUILD_ID-signed.zip" \
+				OTA/recovery-two-step.img >"$LEAF_PACKAGE-recovery.img"
+			retry_uploading "$LEAF_PACKAGE-recovery.img"
+			echo "$JENKINS_DEVICE-target_files-$JENKINS_FLAVOR-$BUILD_ID-signed.zip" > "$TARGET_FILES_DIR/latest_$JENKINS_FLAVOR"
+		else
+			# Full image package for GSI
+			retry_uploading "$LEAF_PACKAGE-img.zip"
 		fi
-		unzip -p "$TARGET_FILES_DIR/$JENKINS_DEVICE-target_files-$JENKINS_FLAVOR-$BUILD_ID-signed.zip" \
-			OTA/recovery-two-step.img >"$LEAF_PACKAGE-recovery.img"
-		retry_uploading "$LEAF_PACKAGE-recovery.img"
-		echo "$JENKINS_DEVICE-target_files-$JENKINS_FLAVOR-$BUILD_ID-signed.zip" >"$TARGET_FILES_DIR/latest_$JENKINS_FLAVOR"
 	done
 }
 
