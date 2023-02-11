@@ -95,7 +95,7 @@ function sign() {
 	mkdir -p "/var/lib/jenkins/leaf/target-files/$RELEASE_DIR$JENKINS_DEVICE"
 	for JENKINS_FLAVOR in "${LEAF_FLAVORS[@]}"; do
 		"$OTATOOLS/sign_target_files_apks" -o -d "$KEY_DIR" \
-			"$ALLOW_GSI_DEBUG_SEPOLICY" \
+			$ALLOW_GSI_DEBUG_SEPOLICY \
 			--avb_vbmeta_key "$KEY_DIR/avb.pem" \
 			--avb_vbmeta_algorithm "$AVB_ALGORITHM" \
 			--extra_apks AdServicesApk.apk="$KEY_DIR/releasekey" \
