@@ -9,7 +9,7 @@ fi
 
 LEAF_FLAVORS=(VANILLA GMS microG)
 TARGET_FILES_DIR="/var/lib/jenkins/leaf/target-files/$RELEASE_DIR$JENKINS_DEVICE"
-MASTER_IP="10.2.0.1"
+MASTER_IP="$(echo $SSH_CLIENT | cut -f1 -d ' ')"
 DL_DIR="/var/www/dl.leafos.org/$RELEASE_DIR$JENKINS_DEVICE/$BUILDDATE"
 KEY_DIR="/var/lib/jenkins/.android-certs"
 AVB_ALGORITHM="SHA256_RSA4096"
