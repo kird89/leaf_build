@@ -18,7 +18,6 @@ OTATOOLS="out/host/linux-x86/bin"
 export LEAF_BUILDTYPE="OFFICIAL"
 export TARGET_RO_FILE_SYSTEM_TYPE="erofs"
 export BOARD_EXT4_SHARE_DUP_BLOCKS=true
-export OVERRIDE_TARGET_FLATTEN_APEX=true
 CCACHE_EXEC=$(which ccache)
 export CCACHE_EXEC
 [ "$CCACHE_EXEC" ] && export USE_CCACHE=true
