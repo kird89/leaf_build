@@ -55,7 +55,7 @@ function sync() {
 	telegram editMessageText "$TELEGRAM_MESSAGE Syncing"
 	repo init -u https://git.leafos.org/LeafOS-Project/android -b "leaf-$JENKINS_LEAF_VERSION" --depth=1
 	repo forall -c 'git reset --hard; git clean -fdx' >/dev/null || true
-	repo sync -j"$THREADS" --jobs-network=$((THREADS < 16 ? THREADS : 16)) --force-sync
+	repo sync -j"$THREADS" --jobs-network=$((THREADS < 16 ? THREADS : 16)) --force-sync --retry-fetches=25
 	if [ "$JENKINS_REPOPICK" ] && [ "$JENKINS_RELEASETYPE" != stable ]; then
 		read -a JENKINS_REPOPICK <<<"$JENKINS_REPOPICK"
 		for change in "${JENKINS_REPOPICK[@]}"; do
