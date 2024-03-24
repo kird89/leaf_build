@@ -89,7 +89,7 @@ function target-files() {
 		fi
 		rm -rf "$OUT"
 		m -j"$(nproc)" target-files-package otatools
-		mv "$OUT/obj/PACKAGING/target_files_intermediates/$TARGET_PRODUCT-target_files-$BUILD_ID.zip" \
+		mv "$OUT/obj/PACKAGING/target_files_intermediates/$TARGET_PRODUCT-target_files.zip" \
 			"out/$JENKINS_DEVICE-target_files-$JENKINS_FLAVOR-$BUILD_ID.zip"
 	done
 }
