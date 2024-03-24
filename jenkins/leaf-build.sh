@@ -69,13 +69,15 @@ function sync() {
 }
 
 function target-files() {
+        AOSP_RELEASE="$(ls -1 -I trunk build/release/aconfig/)"
+
 	telegram editMessageText "$TELEGRAM_MESSAGE Generating target files"
 	source build/envsetup.sh
 	fetch_device "$JENKINS_DEVICE"
 	if [ "$JENKINS_LUNCH" ]; then
-		lunch "${JENKINS_LUNCH}_$JENKINS_DEVICE-$JENKINS_BUILDTYPE"
+		lunch "${JENKINS_LUNCH}_$JENKINS_DEVICE-$AOSP_RELEASE-$JENKINS_BUILDTYPE"
 	else
-		lunch "$JENKINS_DEVICE-$JENKINS_BUILDTYPE"
+		lunch "$JENKINS_DEVICE-$AOSP_RELEASE-$JENKINS_BUILDTYPE"
 	fi
 	for JENKINS_FLAVOR in "${LEAF_FLAVORS[@]}"; do
 		unset WITH_GMS
@@ -105,6 +107,7 @@ function sign() {
 			--extra_apks Bluetooth.apk="$KEY_DIR/bluetooth" \
 			--extra_apks HalfSheetUX.apk="$KEY_DIR/releasekey" \
 			--extra_apks OsuLogin.apk="$KEY_DIR/releasekey" \
+			--extra_apks PdfViewer.apk="$KEY_DIR/releasekey" \
 			--extra_apks SafetyCenterResources.apk="$KEY_DIR/releasekey" \
 			--extra_apks ServiceConnectivityResources.apk="$KEY_DIR/releasekey" \
 			--extra_apks ServiceUwbResources.apk="$KEY_DIR/releasekey" \
@@ -136,6 +139,8 @@ function sign() {
 			--extra_apex_payload_key com.android.devicelock.apex="$KEY_DIR/avb.pem" \
 			--extra_apks com.android.extservices.apex="$KEY_DIR/releasekey" \
 			--extra_apex_payload_key com.android.extservices.apex="$KEY_DIR/avb.pem" \
+			--extra_apks com.android.hardware.biometrics.fingerprint.virtual.apex="$KEY_DIR/releasekey" \
+			--extra_apex_payload_key com.android.hardware.biometrics.fingerprint.virtual.apex="$KEY_DIR/avb.pem" \
 			--extra_apks com.android.healthfitness.apex="$KEY_DIR/releasekey" \
 			--extra_apex_payload_key com.android.healthfitness.apex="$KEY_DIR/avb.pem" \
 			--extra_apks com.android.i18n.apex="$KEY_DIR/releasekey" \
