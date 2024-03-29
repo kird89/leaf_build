@@ -249,7 +249,7 @@ function upload() {
 				rm -f "$TARGET_FILES_DIR/$(cat "$TARGET_FILES_DIR/latest_$JENKINS_FLAVOR")"
 			fi
 			unzip -p "$TARGET_FILES_DIR/$JENKINS_DEVICE-target_files-$JENKINS_FLAVOR-$BUILD_ID-signed.zip" \
-				OTA/recovery-two-step.img >"$LEAF_PACKAGE-recovery.img"
+				IMAGES/recovery.img >"$LEAF_PACKAGE-recovery.img"
 			retry_uploading "$LEAF_PACKAGE-recovery.img"
 			echo "$JENKINS_DEVICE-target_files-$JENKINS_FLAVOR-$BUILD_ID-signed.zip" >"$TARGET_FILES_DIR/latest_$JENKINS_FLAVOR"
 		fi
