@@ -10,7 +10,9 @@ fi
 LEAF_FLAVORS=(VANILLA GMS microG)
 TARGET_FILES_DIR="/var/lib/jenkins/leaf/target-files/$RELEASE_DIR$JENKINS_DEVICE"
 MASTER_IP="$(echo $SSH_CLIENT | cut -f1 -d ' ')"
+BUILDDATE=$(echo "$BUILDDATE" | head -n 1)
 DL_DIR="/var/www/dl.leafos.org/$RELEASE_DIR$JENKINS_DEVICE/$BUILDDATE"
+WWW_DIR="/var/www/leafos.org"
 KEY_DIR="/var/lib/jenkins/.android-certs"
 AVB_ALGORITHM="SHA256_RSA4096"
 OTATOOLS="out/host/linux-x86/bin"
@@ -48,6 +50,10 @@ function telegram() {
 
 function init() {
 	telegram sendMessage "$TELEGRAM_MESSAGE"
+	OTA_INDEX=$(ssh jenkins@$MASTER_IP mktemp)
+	scp ./jenkins/build/jenkins/index-ota.sh jenkins@$MASTER_IP:"$OTA_INDEX"
+	ssh jenkins@$MASTER_IP chmod +x "$OTA_INDEX"
+	echo "$OTA_INDEX" > .ota_index_tmp
 }
 
 function sync() {
@@ -254,6 +260,9 @@ function upload() {
 			echo "$JENKINS_DEVICE-target_files-$JENKINS_FLAVOR-$BUILD_ID-signed.zip" >"$TARGET_FILES_DIR/latest_$JENKINS_FLAVOR"
 		fi
 	done
+
+	OTA_INDEX=$(cat .ota_index_tmp)
+	ssh jenkins@$MASTER_IP "$OTA_INDEX \"$DL_DIR\" \"$WWW_DIR\" \"https://${DL_DIR/\/var\/www\//}\" \"$JENKINS_DEVICE\""
 }
 
 function cleanup() {
@@ -270,4 +279,10 @@ function cleanup() {
 	rm -f leaf*.zip
 	rm -f leaf*.img
 	rm -rf .repo/local_manifests
+
+	OTA_INDEX=$(cat .ota_index_tmp 2>/dev/null)
+	rm -f .ota_index_tmp
+	if [ ! -z "$OTA_INDEX" ]; then
+		ssh jenkins@$MASTER_IP rm -f "$OTA_INDEX"
+	fi
 }
