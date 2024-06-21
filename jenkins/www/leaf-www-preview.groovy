@@ -17,7 +17,7 @@ pipeline {
         stage('Pick commit'){
             steps {
                 sh '''#!/bin/bash
-                        git fetch origin refs/changes/${GERRIT_CHANGE_NUMBER: -2}/${GERRIT_CHANGE_NUMBER}/${GERRIT_PATCHSET_NUMBER}
+                        git fetch origin ${GERRIT_REFSPEC}
                         git checkout FETCH_HEAD
                 '''
             }
