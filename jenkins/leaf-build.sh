@@ -105,7 +105,7 @@ function sign() {
 	[ "$TARGET_IS_GSI" ] && ALLOW_GSI_DEBUG_SEPOLICY="--allow_gsi_debug_sepolicy"
 	mkdir -p "/var/lib/jenkins/leaf/target-files/$RELEASE_DIR$JENKINS_DEVICE"
 	for JENKINS_FLAVOR in "${LEAF_FLAVORS[@]}"; do
-		zip -d "out/$JENKINS_DEVICE-target_files-$JENKINS_FLAVOR-$BUILD_ID.zip" "BOOTABLE_IMAGES/*" "IMAGES/*boot.img" "IMAGES/recovery.img"
+		[ ! "$TARGET_IS_GSI" ] && zip -d "out/$JENKINS_DEVICE-target_files-$JENKINS_FLAVOR-$BUILD_ID.zip" "BOOTABLE_IMAGES/*" "IMAGES/*boot.img" "IMAGES/recovery.img"
 		"$OTATOOLS/sign_target_files_apks" -o -d "$KEY_DIR" \
 			$ALLOW_GSI_DEBUG_SEPOLICY \
 			--avb_vbmeta_key "$KEY_DIR/avb.pem" \
