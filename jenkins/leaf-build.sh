@@ -75,7 +75,7 @@ function sync() {
 }
 
 function target-files() {
-        AOSP_RELEASE="$(ls -1 -I trunk build/release/aconfig/)"
+        AOSP_RELEASE="$(ls -1 -I trunk -I root build/release/aconfig/)"
 
 	telegram editMessageText "$TELEGRAM_MESSAGE Generating target files"
 	source build/envsetup.sh
