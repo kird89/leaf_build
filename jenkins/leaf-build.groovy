@@ -25,6 +25,7 @@ pipeline {
             steps {
                 script {
                     currentBuild.displayName = "${currentBuild.displayName} (${params.JENKINS_DEVICE})"
+                    env.STAGE = "init"
                 }
                 leaf_build("init")
             }
