@@ -17,8 +17,8 @@ pipeline {
 
                         export MASTER_IP="$(echo $SSH_CLIENT | cut -f1 -d ' ')"
                         export GERRIT_URL="ssh://LeafOS-Jenkins@review.leafos.org:29418/LeafOS-Project/leaf_www"
-                        ssh jenkins@$MASTER_IP git -C /var/www/leafos.org/ fetch ${GERRIT_URL} ${GERRIT_REFSPEC}
-                        ssh jenkins@$MASTER_IP git -C /var/www/leafos.org/ reset --hard FETCH_HEAD
+                        ssh jenkins@$MASTER_IP git -C /var/www/leafos.org/ reset --hard
+                        ssh jenkins@$MASTER_IP git -C /var/www/leafos.org/ pull ${GERRIT_URL} ${GERRIT_REFSPEC}
                         ssh jenkins@$MASTER_IP "cd /var/www/leafos.org; composer install"
                 '''
             }
