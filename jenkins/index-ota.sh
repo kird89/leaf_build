@@ -16,15 +16,17 @@ function get_metadata_value() {
 	echo "$METADATA_LOCAL" | grep "$KEY=" | cut -f2- -d '='
 }
 
-echo "" > transaction.sql
+TRANSACTION=$(mktemp)
+
+echo "" > "$TRANSACTION"
 
 find "$BASEDIR" -name *.zip -or -name *.sha256 -mtime +50 -delete -print
 find "$BASEDIR" -empty -type d -delete -print
 
 if [ ! -z "$INDEX_DEVICE" ]; then
-	echo "DELETE FROM leaf_ota WHERE device = \"$INDEX_DEVICE\";" > transaction.sql
+	echo "DELETE FROM leaf_ota WHERE device = \"$INDEX_DEVICE\";" > "$TRANSACTION"
 else
-	echo "DELETE FROM leaf_ota;" > transaction.sql
+	echo "DELETE FROM leaf_ota;" > "$TRANSACTION"
 fi
 for OTA in $(find "$BASEDIR" -name *.zip); do
 	echo "$OTA"
@@ -58,9 +60,9 @@ for OTA in $(find "$BASEDIR" -name *.zip); do
 	echo "INSERT INTO leaf_ota(device, datetime, filename, id, romtype, size, url, version, " \
 		"flavor, incremental, incremental_base, upgrade) VALUES (\"$DEVICE\", \"$DATETIME\", " \
 		"\"$FILENAME\", \"$ID\", \"$ROMTYPE\", \"$SIZE\", \"$URL\", \"$VERSION\", " \
-		"\"$FLAVOR\", \"$INCREMENTAL\", \"$INCREMENTAL_BASE\", \"$UPGRADE\");" >> transaction.sql
+		"\"$FLAVOR\", \"$INCREMENTAL\", \"$INCREMENTAL_BASE\", \"$UPGRADE\");" >> "$TRANSACTION"
 done
 
-echo "UPDATE leaf_ota SET incremental_base = NULL WHERE incremental_base = '';" >> transaction.sql
-cat transaction.sql | mariadb -u leaf -pleaf -D "leaf_ota"
-rm transaction.sql
+echo "UPDATE leaf_ota SET incremental_base = NULL WHERE incremental_base = '';" >> "$TRANSACTION"
+cat "$TRANSACTION" | mariadb -u leaf -pleaf -D "leaf_ota"
+rm "$TRANSACTION"
