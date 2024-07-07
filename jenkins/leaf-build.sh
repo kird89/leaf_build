@@ -262,7 +262,8 @@ function upload() {
 	done
 
 	OTA_INDEX=$(cat .ota_index_tmp)
-	ssh jenkins@$MASTER_IP "$OTA_INDEX \"$DL_DIR\" \"$WWW_DIR\" \"https://${DL_DIR/\/var\/www\//}\" \"$JENKINS_DEVICE\""
+	DEVICE_DIR=$(dirname "$DL_DIR")
+	ssh jenkins@$MASTER_IP "$OTA_INDEX \"$DEVICE_DIR\" \"$WWW_DIR\" \"https://${DEVICE_DIR/\/var\/www\//}\" \"$JENKINS_DEVICE\""
 }
 
 function cleanup() {
