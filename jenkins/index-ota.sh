@@ -35,7 +35,6 @@ for OTA in $(find "$BASEDIR" -name *.zip); do
 		DEVICE=$(get_metadata_value "$METADATA" "pre-device")
 		DATETIME=$(get_metadata_value "$METADATA" "post-timestamp")
 		INCREMENTAL=$(get_metadata_value "$METADATA" "post-build-incremental")
-		INCREMENTAL_BASE=$(get_metadata_value "$METADATA" "pre-build-incremental")
 	else # GSI
 		DEVICE=$(echo "$OTA" | cut -f5 -d '-')
 		DATETIME=$(date -r "$OTA" +%s)
@@ -47,9 +46,13 @@ for OTA in $(find "$BASEDIR" -name *.zip); do
 	SIZE=$(du -b "$OTA" | cut -f1)
 	URL=$(echo "$OTA" | sed "s|$BASEDIR|$BASEURL|g")
 	VERSION=$(echo "$OTA" | cut -f2 -d '-')
-	FLAVOR=$(echo "$OTA" | cut -f4 -d '-')
 	INCREMENTAL=$(get_metadata_value "$METADATA" "post-build-incremental")
 	INCREMENTAL_BASE=$(get_metadata_value "$METADATA" "pre-build-incremental")
+	if [ -z "$INCREMENTAL_BASE" ]; then
+		FLAVOR=$(echo "$OTA" | cut -f4 -d '-')
+	else
+		FLAVOR=$(echo "$OTA" | cut -f6 -d '-')
+	fi
 	UPGRADE=$(cat "$WWWDIR/content/devices/$DEVICE.yml" | grep "format_on_upgrade:" | cut -f2 -d ':' | xargs)
 
 	echo "INSERT INTO leaf_ota(device, datetime, filename, id, romtype, size, url, version, " \
